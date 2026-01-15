@@ -5,5 +5,7 @@
   // json specific
   "of" : "course we can use json as j // son5", 
   // json specific
-  trailing : "trailing comma is ok",
+  trailing : "trailing comma is ok", // json specific
+  // json specific
+  // trailing1 : "trailing comma is ok",
 } 

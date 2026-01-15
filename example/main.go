@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
-	"github.com/yosuke-furukawa/json5/encoding/json5"
+	"github.com/928799934/json5-go"
 )
 
 func main() {
@@ -53,6 +52,6 @@ func procArgs() {
 	if *outputPath == "" {
 		fmt.Println(string(b))
 	} else {
-		ioutil.WriteFile(*outputPath, b, 0644)
+		os.WriteFile(*outputPath, b, 0644)
 	}
 }

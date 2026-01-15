@@ -1,27 +1,21 @@
-json5 implemented by golang
-================
+# json5 by golang
 
-[![Build Status](https://travis-ci.org/yosuke-furukawa/json5.svg?branch=master)](https://travis-ci.org/yosuke-furukawa/json5)
+[![Go Reference](https://pkg.go.dev/badge/github.com/928799934/json5-go.svg)](https://pkg.go.dev/github.com/928799934/json5-go)
+[![GitHub tag (latest SemVer pre-release)](https://img.shields.io/github/v/tag/928799934/json5-go?include_prereleases&label=release-tag)](https://github.com/928799934/json5-go/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/928799934/json5-go)](https://goreportcard.com/report/github.com/928799934/json5-go)
+[![Open Source Helpers](https://www.codetriage.com/928799934/json5-go/badges/users.svg)](https://www.codetriage.com/928799934/json5-go)
+[![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/928799934/json5-go/blob/master/LICENSE.md)
+
+[![Build Status](https://travis-ci.org/928799934/json5-go.svg?branch=master)](https://travis-ci.org/928799934/json5-go)
+
+The code is heavily modified from https://travis-ci.org/yosuke-furukawa/json5.
 
 [JSON5](https://github.com/aseemk/json5) is Yet another JSON.
-
-# INSTALL
-
-```
-$ brew tap yosuke-furukawa/json5
-$ brew install json5
-```
-
-# HOW TO USE
-
-```
-$ json5 -c path/to/test.json5 # output stdout
-$ json5 -c path/to/test.json5 -o path/to/test.json # output path/to/test.json
-```
+---
 
 # go get
 ```
-$ go get github.com/yosuke-furukawa/json5
+$ go get github.com/928799934/json5-go
 ```
 
 # example
@@ -32,7 +26,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/yosuke-furukawa/json5/encoding/json5"
+	"github.com/928799934/json5-go"
 	"os"
 )
 
@@ -71,11 +65,3 @@ $ json5 -c example.json5
 #    "trailing": "trailing comma is ok"
 #}
 ```
-
-# TODO
-- block comment
-- multiline string
-- hexadecimal notation
-
-
-
