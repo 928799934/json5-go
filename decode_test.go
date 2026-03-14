@@ -1388,3 +1388,50 @@ func TestDecoder_Decode_Unmarshaler(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 }
+
+func TestDecoder_CommentAfterObjectValue(t *testing.T) {
+	j5 := "{\n\"a\": 1 // trailing\n}\n"
+	var m map[string]int
+	if err := NewDecoder(bytes.NewBufferString(j5)).Decode(&m); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if got, ok := m["a"]; !ok || got != 1 {
+		t.Fatalf("Unexpected result: %#v", m)
+	}
+}
+
+func TestDecoder_CommentAfterObjectValueBeforeComma(t *testing.T) {
+	j5 := "{\n\"a\": 1 // trailing\n, \"b\": 2}\n"
+	var m map[string]int
+	if err := NewDecoder(bytes.NewBufferString(j5)).Decode(&m); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if got := m["a"]; got != 1 {
+		t.Fatalf("m[\"a\"] = %v, want 1", got)
+	}
+	if got := m["b"]; got != 2 {
+		t.Fatalf("m[\"b\"] = %v, want 2", got)
+	}
+}
+
+func TestDecoder_CommentInEmptyObject(t *testing.T) {
+	j5 := "{\n// trailing\n}\n"
+	var m map[string]int
+	if err := NewDecoder(bytes.NewBufferString(j5)).Decode(&m); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if len(m) != 0 {
+		t.Fatalf("Unexpected result: %#v", m)
+	}
+}
+
+func TestDecoder_CommentInEmptyArray(t *testing.T) {
+	j5 := "[\n// trailing\n]\n"
+	var v []int
+	if err := NewDecoder(bytes.NewBufferString(j5)).Decode(&v); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if len(v) != 0 {
+		t.Fatalf("Unexpected result: %#v", v)
+	}
+}

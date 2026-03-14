@@ -105,6 +105,9 @@ type scanner struct {
 
 	// total bytes consumed, updated by decoder.Decode
 	bytes int64
+
+	commentReturn func(*scanner, int) int
+	inLineComment bool
 }
 
 // These values are returned by the state transition functions
@@ -151,6 +154,8 @@ func (s *scanner) reset() {
 	s.err = nil
 	s.redo = false
 	s.endTop = false
+	s.commentReturn = nil
+	s.inLineComment = false
 }
 
 // eof tells the scanner that the end of input has been reached.
@@ -161,6 +166,9 @@ func (s *scanner) eof() int {
 	}
 	if s.endTop {
 		return scanEnd
+	}
+	if s.inLineComment {
+		s.step(s, '\n')
 	}
 	s.step(s, ' ')
 	if s.endTop {
@@ -199,6 +207,11 @@ func isSpace(c rune) bool {
 func stateBeginValueOrEmpty(s *scanner, c int) int {
 	if c <= ' ' && isSpace(rune(c)) {
 		return scanSkipSpace
+	}
+	if c == '/' {
+		s.commentReturn = stateBeginValueOrEmpty
+		s.step = stateInlineComment
+		return scanSkipInComment
 	}
 	if c == ']' {
 		return stateEndValue(s, c)
@@ -242,6 +255,7 @@ func stateBeginValue(s *scanner, c int) int {
 		s.step = stateN
 		return scanBeginLiteral
 	case '/': // beginning of comment
+		s.commentReturn = stateBeginValue
 		s.step = stateInlineComment
 		return scanSkipInComment
 	}
@@ -295,6 +309,7 @@ func stateBeginValueFromComment(s *scanner, c int) int {
 		s.step = stateN
 		return scanBeginLiteral
 	case '/': // beginning of comment
+		s.commentReturn = stateBeginValueFromComment
 		s.step = stateInlineComment
 		return scanSkipInComment
 	case '}':
@@ -316,6 +331,11 @@ func stateBeginStringOrEmpty(s *scanner, c int) int {
 	if c <= ' ' && isSpace(rune(c)) {
 		return scanSkipSpace
 	}
+	if c == '/' {
+		s.commentReturn = stateBeginStringOrEmpty
+		s.step = stateInlineComment
+		return scanSkipInComment
+	}
 	if c == '}' {
 		n := len(s.parseState)
 		s.parseState[n-1] = parseObjectValue
@@ -330,6 +350,7 @@ func stateBeginString(s *scanner, c int) int {
 		return scanSkipSpace
 	}
 	if c == '/' {
+		s.commentReturn = stateBeginString
 		s.step = stateInlineComment
 		return scanSkipInComment
 	}
@@ -357,6 +378,11 @@ func stateEndValue(s *scanner, c int) int {
 	if c <= ' ' && isSpace(rune(c)) {
 		s.step = stateEndValue
 		return scanSkipSpace
+	}
+	if c == '/' {
+		s.commentReturn = stateEndValue
+		s.step = stateInlineComment
+		return scanSkipInComment
 	}
 	ps := s.parseState[n-1]
 	switch ps {
@@ -396,6 +422,9 @@ func stateEndValue(s *scanner, c int) int {
 // such as after reading `{}` or `[1,2,3]`.
 // Only space characters should be seen now.
 func stateEndTop(s *scanner, c int) int {
+	if c == '/' {
+		return scanEnd
+	}
 	if c != ' ' && c != '\t' && c != '\r' && c != '\n' {
 		// Complain about non-space byte on next call.
 		s.error(c, "after top-level value")
@@ -696,6 +725,7 @@ func stateNul(s *scanner, c int) int {
 // stateInlineComment is the state after reading `/`
 func stateInlineComment(s *scanner, c int) int {
 	if c == '/' {
+		s.inLineComment = true
 		s.step = stateSkipComment
 		return scanSkipInComment
 	}
@@ -705,7 +735,12 @@ func stateInlineComment(s *scanner, c int) int {
 // stateSkipComment is the state after reading `//`
 func stateSkipComment(s *scanner, c int) int {
 	if c == '\n' {
-		s.step = stateBeginValueFromComment
+		s.inLineComment = false
+		if s.commentReturn != nil {
+			s.step = s.commentReturn
+		} else {
+			s.step = stateBeginValueFromComment
+		}
 		return scanSkipInComment
 	}
 	s.step = stateSkipComment
@@ -721,7 +756,7 @@ func stateError(s *scanner, c int) int {
 // error records an error and switches to the error state.
 func (s *scanner) error(c int, context string) int {
 	s.step = stateError
-	s.err = &SyntaxError{"invalid character " + quoteChar(c) + " " + context + "\nOffset: " + strconv.Itoa(int(s.bytes)), s.bytes}
+	s.err = &SyntaxError{"invalid character " + quoteChar(c) + " " + context, s.bytes}
 	return scanError
 }
 
